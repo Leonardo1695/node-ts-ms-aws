@@ -5,15 +5,15 @@
 
 ## Current status
 
-**Phase: VRD-030 processing-service scaffold done.** Next: VRD-031 (Kinesis consumer loop).
+**Phase: VRD-032 metric engine + Postgres writes done.** Next: VRD-033 (DynamoDB hot raw writer).
 
 ## Current work focus
 
-VRD-031 — Kinesis consumer loop with checkpointing and idempotent handling.
+VRD-033 — Write hot raw telemetry to DynamoDB (`ASSET#<id>` / `TS#<iso>`).
 
 ## Recent changes
 
-- VRD-030: `apps/processing-service` — Nest consumer skeleton with config, logger, OTel bootstrap, `/health` (+ live/ready), graceful shutdown, Jaeger integration test.
+- VRD-032: `TelemetryEventEntity` + `TelemetryEventRepository` in `@verdiron/persistence`; `MetricEngineService` applies `computeAssetMetricsFromIntervals` and inserts normalized rows into partitioned `telemetry_events` (idempotent via `ON CONFLICT DO NOTHING`).
 - VRD-024: `ApiKeyGuard` on `POST /api/v1/telemetry` (`x-api-key` → 401); `/health/live` + `/health/ready` (legacy `/health` kept); `enableShutdownHooks` + `TracingShutdownService`; custom OTel spans `telemetry.accept` / `telemetry.produce` on intake.
 - VRD-023: S3 JSONL archive on intake (`raw/dt=YYYY-MM-DD/asset=<id>/<batch>.jsonl`); Kinesis + S3 in parallel; path-style S3 for LocalStack.
 - VRD-021: `POST /api/v1/telemetry` — single or batch intake via `@verdiron/domain` zod schemas + nestjs-zod `ZodValidationPipe`; 202 accepted / 400 validation errors.
@@ -75,7 +75,9 @@ VRD-031 — Kinesis consumer loop with checkpointing and idempotent handling.
 13. ~~S3 raw archive (VRD-023)~~ ✅
 14. ~~Ingestion hardening (VRD-024)~~ ✅
 15. ~~Processing service scaffold (VRD-030)~~ ✅
-16. `processing-service`: Kinesis consumer → metric engine → Postgres + DynamoDB → RabbitMQ events.
+16. ~~Processing Kinesis consumer loop (VRD-031)~~ ✅
+17. ~~Processing metric engine + Postgres writes (VRD-032)~~ ✅
+18. `processing-service`: DynamoDB hot raw + rollup refresh + RabbitMQ events.
 16. `api-service`: REST + OpenAPI + control routes.
 17. `device-simulator`: realistic fleet telemetry.
 18. `python-etl`: S3 raw → daily rollups → Postgres reporting.

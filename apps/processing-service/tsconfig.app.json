@@ -16,6 +16,15 @@
     },
     {
       "path": "../../libs/tracing/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/domain/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/messaging/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/persistence/tsconfig.lib.json"
     }
   ]
 }

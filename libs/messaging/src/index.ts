@@ -4,7 +4,13 @@ export {
   type AwsSdkClientConfig,
 } from './lib/aws-client-config';
 export { createKinesisClient } from './lib/kinesis-client';
-export { KinesisConsumer, type KinesisConsumerOptions, type KinesisRecordHandler } from './lib/kinesis-consumer';
+export {
+  InMemoryShardCheckpointStore,
+  KinesisConsumer,
+  type KinesisConsumerOptions,
+  type KinesisRecordHandler,
+  type ShardCheckpointStore,
+} from './lib/kinesis-consumer';
 export { KinesisProducer, type KinesisProducerOptions } from './lib/kinesis-producer';
 export {
   createMetricsUpdatedClient,

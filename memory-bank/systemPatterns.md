@@ -48,7 +48,7 @@ real-time ingestion via Kinesis, storage in PostgreSQL + a NoSQL hot store, raw 
 - `libs/domain` — shared TypeScript types + zod schemas + **pure** sustainability calculations
   (unit-tested, framework-free).
 - `libs/messaging` — Kinesis producer/consumer helpers + RabbitMQ (NestJS RMQ transport) config.
-- `libs/persistence` — TypeORM data source + entities + migrations + DynamoDB (lib-dynamodb) client + **S3 object-store helpers** (`createS3Client`, `TelemetryRawArchive`).
+- `libs/persistence` — TypeORM data source + entities + migrations + DynamoDB (lib-dynamodb) client + **S3 object-store helpers** (`createS3Client`, `TelemetryRawArchive`) + **`TelemetryEventEntity` / repository** for partitioned telemetry inserts.
 - `libs/config` — `@nestjs/config` module + zod-validated environment schema.
 - `libs/logger` — nestjs-pino logging with request/correlation ids.
 

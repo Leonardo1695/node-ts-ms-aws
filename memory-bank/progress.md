@@ -31,6 +31,8 @@
 - `ingestion-service` — S3 JSONL raw archive on intake via `@verdiron/persistence` (VRD-023).
 - `ingestion-service` — API key guard, live/ready health, graceful shutdown, intake OTel spans (VRD-024).
 - `processing-service` — Nest scaffold: config + logger + OTel; `/health` ok; Jaeger integration test (VRD-030).
+- `processing-service` — Kinesis consumer loop with shard checkpointing + eventId dedupe (VRD-031).
+- `processing-service` — metric engine + partitioned `telemetry_events` writes via TypeORM (VRD-032).
 
 ## What's left to build
 
@@ -64,7 +66,9 @@ Legend: [ ] not started · [~] in progress · [x] done
 - [x] `ingestion-service` S3 raw archive on intake (VRD-023)
 - [x] `ingestion-service` hardening — API key, health probes, shutdown, spans (VRD-024)
 - [x] `processing-service` scaffold — health, OTel (VRD-030)
-- [ ] `processing-service` Kinesis consumer loop (VRD-031)
+- [x] `processing-service` Kinesis consumer loop (VRD-031)
+- [x] `processing-service` metric engine + Postgres writes (VRD-032)
+- [ ] `processing-service` DynamoDB hot raw writer (VRD-033)
 - [ ] `api-service` (REST + OpenAPI + API key guard + control routes)
 - [ ] `device-simulator` (light plain-TS Node app, fleet telemetry emitter)
 - [ ] `python-etl` (S3 raw → daily rollups → Postgres reporting)

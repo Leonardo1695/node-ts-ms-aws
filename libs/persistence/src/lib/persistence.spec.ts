@@ -3,6 +3,10 @@ import type { TelemetryEvent } from '@verdiron/domain';
 import { createTypeOrmDataSourceOptions } from './typeorm-data-source';
 import { createAwsSdkClientConfig } from './aws-client-config';
 import {
+  mapTelemetryEventToEntity,
+  TelemetryEventRepository,
+} from './telemetry-event.repository';
+import {
   buildTelemetryRawArchiveKey,
   groupTelemetryEventsByPartition,
   TelemetryRawArchive,
@@ -80,6 +84,15 @@ describe('persistence helpers', () => {
     expect(
       buildTelemetryRawArchiveKey('2026-06-15', 'asset-1', 'batch-1'),
     ).toBe('raw/dt=2026-06-15/asset=asset-1/batch-1.jsonl');
+  });
+
+  it('maps telemetry events to partitioned entity rows', () => {
+    const entity = mapTelemetryEventToEntity(sampleEvent);
+
+    expect(entity.eventId).toBe(sampleEvent.eventId);
+    expect(entity.assetId).toBe(sampleEvent.assetId);
+    expect(entity.ts.toISOString()).toBe(sampleEvent.ts);
+    expect(entity.speedKph).toBe(sampleEvent.speedKph);
   });
 
   it('writes JSONL objects to S3 with partitioned keys', async () => {

@@ -21,7 +21,7 @@ async function bootstrap(): Promise<void> {
   const port = Number(process.env['PROCESSING_PORT'] ?? 3002);
   await app.listen(port);
   logger.log(`Processing service listening on port ${port}`);
-  logger.log('Kinesis consumer wiring arrives in VRD-031');
+  logger.log('Kinesis consumer + metric engine active; DynamoDB writer in VRD-033');
 }
 
 void bootstrap();

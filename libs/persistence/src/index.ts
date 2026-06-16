@@ -7,6 +7,7 @@ export {
 export {
   AssetEntity,
   SiteEntity,
+  TelemetryEventEntity,
   persistenceEntities,
 } from './lib/entities';
 export {
@@ -49,3 +50,7 @@ export {
   type PostgresEnvConfig,
   type TypeOrmConfigInput,
 } from './lib/typeorm-data-source';
+export {
+  mapTelemetryEventToEntity,
+  TelemetryEventRepository,
+} from './lib/telemetry-event.repository';

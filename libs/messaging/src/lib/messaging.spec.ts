@@ -4,6 +4,10 @@ import type { TelemetryEvent } from '@verdiron/domain';
 import { createAwsSdkClientConfig } from './aws-client-config';
 import { KinesisProducer } from './kinesis-producer';
 import {
+  InMemoryShardCheckpointStore,
+  KinesisConsumer,
+} from './kinesis-consumer';
+import {
   createRmqClientOptions,
   createRmqServerOptions,
   METRICS_UPDATED_QUEUE,
@@ -77,5 +81,44 @@ describe('messaging helpers', () => {
       input: { Records: Array<{ PartitionKey: string }> };
     };
     expect(firstCommand.input.Records[0]?.PartitionKey).toBe('asset-1');
+  });
+
+  it('advances shard iterators via checkpoint store between polls', async () => {
+    const checkpointStore = new InMemoryShardCheckpointStore();
+    const send = jest
+      .fn()
+      .mockResolvedValueOnce({ Shards: [{ ShardId: 'shard-0' }] })
+      .mockResolvedValueOnce({ ShardIterator: 'iter-1' })
+      .mockResolvedValueOnce({
+        Records: [{ Data: Buffer.from('{"eventId":"1"}') }],
+        NextShardIterator: 'iter-2',
+      })
+      .mockResolvedValueOnce({ Shards: [{ ShardId: 'shard-0' }] })
+      .mockResolvedValueOnce({
+        Records: [],
+        NextShardIterator: 'iter-3',
+      });
+    const client = { send } as unknown as KinesisClient;
+    const consumer = new KinesisConsumer({
+      client,
+      streamName: 'telemetry',
+      checkpointStore,
+    });
+    const handler = jest.fn();
+
+    await consumer.pollOnce(handler);
+    await consumer.pollOnce(handler);
+
+    expect(send).toHaveBeenCalledTimes(5);
+    expect(
+      (send.mock.calls[2]?.[0] as { input: { ShardIterator: string } }).input
+        .ShardIterator,
+    ).toBe('iter-1');
+    expect(
+      (send.mock.calls[4]?.[0] as { input: { ShardIterator: string } }).input
+        .ShardIterator,
+    ).toBe('iter-2');
+    expect(checkpointStore.getIterator('shard-0')).toBe('iter-3');
+    expect(handler).toHaveBeenCalledTimes(1);
   });
 });

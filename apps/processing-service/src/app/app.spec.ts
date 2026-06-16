@@ -1,7 +1,10 @@
 import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { TelemetryEventRepository } from '@verdiron/persistence';
 import { AppModule } from './app.module';
+import { KinesisConsumerLoopService } from '../kinesis/kinesis-consumer-loop.service';
+import { VERDIRON_DATA_SOURCE } from '../persistence/persistence.module';
 
 const validEnv: Record<string, string> = {
   NODE_ENV: 'test',
@@ -43,7 +46,26 @@ describe('ProcessingService', () => {
 
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(VERDIRON_DATA_SOURCE)
+      .useValue({
+        isInitialized: true,
+        destroy: jest.fn().mockResolvedValue(undefined),
+        getRepository: jest.fn().mockReturnValue({
+          findOne: jest.fn().mockResolvedValue(null),
+        }),
+      })
+      .overrideProvider(TelemetryEventRepository)
+      .useValue({
+        insertEvent: jest.fn().mockResolvedValue({ identifiers: [] }),
+      })
+      .overrideProvider(KinesisConsumerLoopService)
+      .useValue({
+        onApplicationBootstrap: jest.fn(),
+        onApplicationShutdown: jest.fn(),
+        pollOnce: jest.fn().mockResolvedValue(0),
+      })
+      .compile();
 
     app = moduleRef.createNestApplication();
     await app.init();
