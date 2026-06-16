@@ -1,0 +1,44 @@
+{
+  "name": "ingestion-service",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/ingestion-service/src",
+  "projectType": "application",
+  "tags": ["scope:ingestion", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/ingestion-service",
+        "main": "apps/ingestion-service/src/main.ts",
+        "tsConfig": "apps/ingestion-service/tsconfig.app.json",
+        "assets": []
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "ingestion-service:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "ingestion-service:build:development"
+        },
+        "production": {
+          "buildTarget": "ingestion-service:build:production"
+        }
+      }
+    },
+    "integration-test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "apps/ingestion-service/jest.integration.config.cjs",
+        "runInBand": true
+      }
+    }
+  }
+}

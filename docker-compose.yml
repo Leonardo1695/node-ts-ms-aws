@@ -1,0 +1,147 @@
+name: verdiron
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: verdiron-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-verdiron}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-verdiron}
+      POSTGRES_DB: ${POSTGRES_DB:-verdiron}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - verdiron
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: verdiron-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-verdiron}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-verdiron}
+    ports:
+      - '${RABBITMQ_PORT:-5672}:5672'
+      - '${RABBITMQ_MANAGEMENT_PORT:-15672}:15672'
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    networks:
+      - verdiron
+
+  localstack:
+    image: localstack/localstack:3.4
+    container_name: verdiron-localstack
+    restart: unless-stopped
+    environment:
+      SERVICES: kinesis,s3,dynamodb
+      DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-test}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-test}
+      KINESIS_STREAM_NAME: ${KINESIS_STREAM_NAME:-telemetry}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-verdiron-raw}
+      DYNAMODB_TABLE_NAME: ${DYNAMODB_TABLE_NAME:-telemetry-hot}
+      DEBUG: ${LOCALSTACK_DEBUG:-0}
+    ports:
+      - '${LOCALSTACK_PORT:-4566}:4566'
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - ./infra/localstack/ready.d:/etc/localstack/init/ready.d
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'curl',
+          '-f',
+          'http://localhost:4566/_localstack/health',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - verdiron
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    container_name: verdiron-jaeger
+    restart: unless-stopped
+    environment:
+      COLLECTOR_OTLP_ENABLED: 'true'
+    ports:
+      - '${JAEGER_UI_PORT:-16686}:16686'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--spider',
+          '-q',
+          'http://localhost:16686/',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - verdiron
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.109.0
+    container_name: verdiron-otel-collector
+    restart: unless-stopped
+    command: ['--config=/etc/otelcol/config.yaml']
+    volumes:
+      - ./infra/otel/collector-config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - '${OTEL_COLLECTOR_GRPC_PORT:-4317}:4317'
+      - '${OTEL_COLLECTOR_HTTP_PORT:-4318}:4318'
+    depends_on:
+      jaeger:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--spider',
+          '-q',
+          'http://localhost:13133/',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - verdiron
+
+networks:
+  verdiron:
+    name: verdiron-network
+
+volumes:
+  postgres-data:
+    name: verdiron-postgres-data
+  rabbitmq-data:
+    name: verdiron-rabbitmq-data
+  localstack-data:
+    name: verdiron-localstack-data

@@ -1,0 +1,26 @@
+{
+  "name": "tracing",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/tracing/src",
+  "projectType": "library",
+  "tags": ["scope:shared"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/tracing",
+        "main": "libs/tracing/src/index.ts",
+        "tsConfig": "libs/tracing/tsconfig.lib.json",
+        "assets": ["libs/tracing/*.md"]
+      }
+    },
+    "integration-test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/tracing/jest.integration.config.cjs",
+        "runInBand": true
+      }
+    }
+  }
+}

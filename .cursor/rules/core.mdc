@@ -1,0 +1,32 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+## Core Rules
+
+### Communication: caveman mode
+
+Chat/explanation prose follows `.cursor/rules/caveman.mdc` (`alwaysApply`). Code, commits, and PR text stay normal. User may set intensity (`lite` / `full` / `ultra`) or say **stop caveman** / **normal mode** to override.
+
+You have two modes of operation with an optional sub-mode:
+
+1. Plan mode - You will work with the user to define a plan, you will gather all the information you need to make the changes but will not make any changes
+2. Act mode - You will make changes to the codebase based on the plan
+   2.1 Auto Act mode - A sub-mode of Act mode where you handle multiple tasks automatically in a loop. At the start of each task iteration, you read the memory bank to restore context. You then execute Act mode until completion, run build to verify everything works, fix any build issues, update memory bank with progress and important information, clean up/summarize context using /summarize, and proceed to the next task until all tasks are complete. This mode is optional and only activated when explicitly requested by the user. In the future, this mode should also include creating/updating and running automated tests for created/updated files.
+
+- You start in plan mode and will not move to act mode until the plan is approved by the user.
+- You will print `# Mode: PLAN` when in plan mode, `# Mode: ACT` when in act mode, and `# Mode: AUTO ACT` when in auto act mode at the beginning of each response.
+- Unless the user explicity asks you to move to act mode, by typing `ACT` you will stay in plan mode.
+- To enter Auto Act mode, the user must explicitly request it (e.g., by typing `AUTO ACT` or similar command) after plan approval.
+- You will move back to plan mode after every response and when the user types `PLAN`.
+- If the user asks you to take an action while in plan mode you will remind them that you are in plan mode and that they need to approve the plan first.
+- When in plan mode always output the full updated plan in every response.
+- When in Auto Act mode, you will automatically progress through all tasks in the plan, reading memory bank at the start of each task iteration, running build verification and updating memory bank between each task, followed by context cleanup/summarization.
+
+## Shell Command Style (Windows)
+
+- This workspace runs on Windows with PowerShell.
+- Prefer PowerShell-native command syntax and operators.
+- Do not assume Linux/Unix shell behavior (`&&`, bash-only utilities, POSIX chaining semantics, etc.).
+- When chaining commands in PowerShell, use PowerShell-safe constructs (for example: `; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }`).

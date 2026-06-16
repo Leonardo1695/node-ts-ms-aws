@@ -1,0 +1,44 @@
+{
+  "name": "processing-service",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/processing-service/src",
+  "projectType": "application",
+  "tags": ["scope:processing", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/processing-service",
+        "main": "apps/processing-service/src/main.ts",
+        "tsConfig": "apps/processing-service/tsconfig.app.json",
+        "assets": []
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "processing-service:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "processing-service:build:development"
+        },
+        "production": {
+          "buildTarget": "processing-service:build:production"
+        }
+      }
+    },
+    "integration-test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "apps/processing-service/jest.integration.config.cjs",
+        "runInBand": true
+      }
+    }
+  }
+}

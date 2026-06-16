@@ -1,0 +1,31 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./libs/config"
+    },
+    {
+      "path": "./libs/domain"
+    },
+    {
+      "path": "./libs/logger"
+    },
+    {
+      "path": "./libs/persistence"
+    },
+    {
+      "path": "./libs/messaging"
+    },
+    {
+      "path": "./libs/tracing"
+    },
+    {
+      "path": "./apps/ingestion-service"
+    },
+    {
+      "path": "./apps/processing-service"
+    }
+  ]
+}
