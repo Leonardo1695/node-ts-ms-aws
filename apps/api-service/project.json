@@ -1,0 +1,44 @@
+{
+  "name": "api-service",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/api-service/src",
+  "projectType": "application",
+  "tags": ["scope:api", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/api-service",
+        "main": "apps/api-service/src/main.ts",
+        "tsConfig": "apps/api-service/tsconfig.app.json",
+        "assets": []
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "api-service:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "api-service:build:development"
+        },
+        "production": {
+          "buildTarget": "api-service:build:production"
+        }
+      }
+    },
+    "integration-test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "apps/api-service/jest.integration.config.cjs",
+        "runInBand": true
+      }
+    }
+  }
+}

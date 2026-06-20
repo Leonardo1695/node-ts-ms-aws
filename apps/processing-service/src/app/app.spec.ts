@@ -1,9 +1,11 @@
 import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { TelemetryEventRepository } from '@verdiron/persistence';
+import { TelemetryEventRepository, TelemetryHotStore } from '@verdiron/persistence';
+import { MetricsUpdatedPublisher } from '@verdiron/messaging';
 import { AppModule } from './app.module';
 import { KinesisConsumerLoopService } from '../kinesis/kinesis-consumer-loop.service';
+import { MetricRollupRefreshService } from '../metrics/metric-rollup-refresh.service';
 import { VERDIRON_DATA_SOURCE } from '../persistence/persistence.module';
 
 const validEnv: Record<string, string> = {
@@ -57,7 +59,23 @@ describe('ProcessingService', () => {
       })
       .overrideProvider(TelemetryEventRepository)
       .useValue({
-        insertEvent: jest.fn().mockResolvedValue({ identifiers: [] }),
+        insertEvent: jest.fn().mockResolvedValue({ inserted: false }),
+      })
+      .overrideProvider(TelemetryHotStore)
+      .useValue({
+        putEvent: jest.fn().mockResolvedValue(undefined),
+      })
+      .overrideProvider(MetricsUpdatedPublisher)
+      .useValue({
+        connect: jest.fn().mockResolvedValue(undefined),
+        close: jest.fn().mockResolvedValue(undefined),
+        publish: jest.fn(),
+      })
+      .overrideProvider(MetricRollupRefreshService)
+      .useValue({
+        scheduleRefreshForTelemetry: jest.fn(),
+        flush: jest.fn().mockResolvedValue(undefined),
+        onModuleDestroy: jest.fn().mockResolvedValue(undefined),
       })
       .overrideProvider(KinesisConsumerLoopService)
       .useValue({

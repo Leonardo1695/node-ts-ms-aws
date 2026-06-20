@@ -3,7 +3,9 @@ import {
   PutRecordsCommand,
   type PutRecordsRequestEntry,
 } from '@aws-sdk/client-kinesis';
+import { context, propagation } from '@opentelemetry/api';
 import type { TelemetryEvent } from '@verdiron/domain';
+import { encodeKinesisTelemetryRecord } from './kinesis-telemetry-record';
 
 export interface KinesisProducerOptions {
   client: KinesisClient;
@@ -31,10 +33,20 @@ export class KinesisProducer {
 
     for (let index = 0; index < events.length; index += this.maxBatchSize) {
       const batch = events.slice(index, index + this.maxBatchSize);
-      const records: PutRecordsRequestEntry[] = batch.map((event) => ({
-        PartitionKey: event.assetId,
-        Data: Buffer.from(JSON.stringify(event)),
-      }));
+      const records: PutRecordsRequestEntry[] = batch.map((event) => {
+        const traceCarrier: Record<string, string> = {};
+        propagation.inject(context.active(), traceCarrier);
+
+        return {
+          PartitionKey: event.assetId,
+          Data: Buffer.from(
+            encodeKinesisTelemetryRecord(
+              event,
+              Object.keys(traceCarrier).length > 0 ? traceCarrier : undefined,
+            ),
+          ),
+        };
+      });
 
       const response = await this.options.client.send(
         new PutRecordsCommand({

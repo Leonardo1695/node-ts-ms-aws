@@ -3,7 +3,11 @@ import {
   telemetryEventSchema,
   type TelemetryEvent,
 } from '@verdiron/domain';
+import { decodeKinesisTelemetryRecord } from '@verdiron/messaging';
+import { startLinkedSpan } from '@verdiron/tracing';
 import { InMemoryEventIdempotencyStore } from './event-idempotency.store';
+
+const PROCESSING_TRACER = 'processing-service';
 
 export type TelemetryEventHandler = (
   event: TelemetryEvent,
@@ -33,9 +37,12 @@ export class TelemetryRecordProcessor {
     for (const record of records) {
       const payload = Buffer.from(record.Data ?? []).toString('utf8');
       let parsedJson: unknown;
+      let traceContext: Record<string, string> | undefined;
 
       try {
-        parsedJson = JSON.parse(payload);
+        const decoded = decodeKinesisTelemetryRecord(payload);
+        parsedJson = decoded.event;
+        traceContext = decoded.traceContext;
       } catch {
         invalid += 1;
         continue;
@@ -52,7 +59,19 @@ export class TelemetryRecordProcessor {
         continue;
       }
 
-      await this.options.onEvent(parsed.data);
+      await startLinkedSpan(
+        PROCESSING_TRACER,
+        'telemetry.consume',
+        traceContext,
+        async () => {
+          await this.options.onEvent(parsed.data);
+        },
+        {
+          'telemetry.event_id': parsed.data.eventId,
+          'telemetry.asset_id': parsed.data.assetId,
+        },
+      );
+
       this.options.idempotencyStore.add(parsed.data.eventId);
       processed += 1;
     }

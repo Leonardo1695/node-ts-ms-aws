@@ -1,0 +1,53 @@
+{
+  "name": "python-etl",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "jobs/python-etl/src",
+  "tags": ["scope:etl", "type:app"],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m pytest",
+        "cwd": "jobs/python-etl"
+      }
+    },
+    "check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m verdiron_etl check",
+        "cwd": "jobs/python-etl",
+        "env": {
+          "PYTHONPATH": "src"
+        }
+      }
+    },
+    "rollup": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m verdiron_etl rollup --from 2026-06-15 --to 2026-06-15",
+        "cwd": "jobs/python-etl",
+        "env": {
+          "PYTHONPATH": "src"
+        }
+      }
+    },
+    "worker": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "command": "python -m verdiron_etl worker",
+        "cwd": "jobs/python-etl",
+        "env": {
+          "PYTHONPATH": "src"
+        }
+      }
+    },
+    "docker-build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker build -t verdiron-python-etl jobs/python-etl"
+      }
+    }
+  }
+}

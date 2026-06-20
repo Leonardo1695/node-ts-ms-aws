@@ -51,6 +51,23 @@ export {
   type TypeOrmConfigInput,
 } from './lib/typeorm-data-source';
 export {
+  buildMetricRollupWindow,
+  METRIC_ROLLUPS_VIEW_NAME,
+  MetricRollupRepository,
+} from './lib/metric-rollup.repository';
+export { FleetMetricsRepository } from './lib/fleet-metrics.repository';
+export { AssetMetricsRepository } from './lib/asset-metrics.repository';
+export { IdlingReportRepository } from './lib/idling-report.repository';
+export {
   mapTelemetryEventToEntity,
   TelemetryEventRepository,
+  type TelemetryInsertResult,
 } from './lib/telemetry-event.repository';
+export {
+  HOT_TELEMETRY_TTL_DAYS,
+  TelemetryHotStore,
+  buildHotTelemetryPartitionKey,
+  buildHotTelemetrySortKey,
+  computeHotTelemetryTtlEpochSeconds,
+  type TelemetryHotStoreOptions,
+} from './lib/telemetry-hot-store';

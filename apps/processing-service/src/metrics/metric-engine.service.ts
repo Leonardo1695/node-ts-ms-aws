@@ -5,9 +5,10 @@ import {
   type TelemetryEvent,
   type TelemetryInterval,
 } from '@verdiron/domain';
-import { AssetEntity, TelemetryEventRepository } from '@verdiron/persistence';
+import { AssetEntity, TelemetryEventRepository, TelemetryHotStore } from '@verdiron/persistence';
 import type { DataSource } from 'typeorm';
 import { VERDIRON_DATA_SOURCE } from '../persistence/persistence.module';
+import { MetricRollupRefreshService } from './metric-rollup-refresh.service';
 
 /** One Kinesis telemetry snapshot is treated as a one-minute observation window. */
 export const DEFAULT_TELEMETRY_SAMPLE_MINUTES = 1;
@@ -22,6 +23,8 @@ export class MetricEngineService {
   constructor(
     @Inject(VERDIRON_DATA_SOURCE) private readonly dataSource: DataSource,
     private readonly telemetryEventRepository: TelemetryEventRepository,
+    private readonly telemetryHotStore: TelemetryHotStore,
+    private readonly metricRollupRefreshService: MetricRollupRefreshService,
   ) {}
 
   async processEvent(event: TelemetryEvent): Promise<MetricEngineResult> {
@@ -45,9 +48,17 @@ export class MetricEngineService {
     });
 
     const insertResult = await this.telemetryEventRepository.insertEvent(event);
-    const persisted =
-      (insertResult.identifiers?.length ?? 0) > 0 ||
-      (insertResult.raw?.length ?? 0) > 0;
+    const persisted = insertResult.inserted;
+
+    await this.telemetryHotStore.putEvent(event);
+
+    if (persisted) {
+      this.metricRollupRefreshService.scheduleRefreshForTelemetry({
+        assetId: asset.assetId,
+        siteId: asset.site.siteId,
+        ts: event.ts,
+      });
+    }
 
     return { metrics, persisted };
   }

@@ -1,6 +1,10 @@
 import type { TelemetryEvent } from '@verdiron/domain';
-import type { DataSource, InsertResult } from 'typeorm';
+import type { DataSource } from 'typeorm';
 import { TelemetryEventEntity } from './entities/telemetry-event.entity';
+
+export interface TelemetryInsertResult {
+  inserted: boolean;
+}
 
 export function mapTelemetryEventToEntity(
   event: TelemetryEvent,
@@ -25,13 +29,16 @@ export function mapTelemetryEventToEntity(
 export class TelemetryEventRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  async insertEvent(event: TelemetryEvent): Promise<InsertResult> {
-    return this.dataSource
+  async insertEvent(event: TelemetryEvent): Promise<TelemetryInsertResult> {
+    const result = await this.dataSource
       .createQueryBuilder()
       .insert()
       .into(TelemetryEventEntity)
       .values(mapTelemetryEventToEntity(event))
       .orIgnore()
+      .returning('event_id')
       .execute();
+
+    return { inserted: (result.raw?.length ?? 0) > 0 };
   }
 }

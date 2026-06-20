@@ -4,6 +4,10 @@ import type { TelemetryEvent } from '@verdiron/domain';
 import { createAwsSdkClientConfig } from './aws-client-config';
 import { KinesisProducer } from './kinesis-producer';
 import {
+  decodeKinesisTelemetryRecord,
+  encodeKinesisTelemetryRecord,
+} from './kinesis-telemetry-record';
+import {
   InMemoryShardCheckpointStore,
   KinesisConsumer,
 } from './kinesis-consumer';
@@ -81,6 +85,26 @@ describe('messaging helpers', () => {
       input: { Records: Array<{ PartitionKey: string }> };
     };
     expect(firstCommand.input.Records[0]?.PartitionKey).toBe('asset-1');
+
+    const body = Buffer.from(
+      (firstCommand.input.Records[0] as { Data: Uint8Array }).Data,
+    ).toString('utf8');
+    const decoded = decodeKinesisTelemetryRecord(body);
+    expect(decoded.event).toMatchObject({ assetId: 'asset-1' });
+  });
+
+  it('round-trips Kinesis telemetry envelopes with optional trace context', () => {
+    const payload = encodeKinesisTelemetryRecord(sampleEvent, {
+      traceparent: '00-abc-def-01',
+    });
+
+    expect(decodeKinesisTelemetryRecord(payload)).toEqual({
+      event: sampleEvent,
+      traceContext: { traceparent: '00-abc-def-01' },
+    });
+    expect(decodeKinesisTelemetryRecord(JSON.stringify(sampleEvent))).toEqual({
+      event: sampleEvent,
+    });
   });
 
   it('advances shard iterators via checkpoint store between polls', async () => {

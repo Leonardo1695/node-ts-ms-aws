@@ -3,6 +3,7 @@ import { VerdironConfigModule } from '@verdiron/config';
 import { VerdironLoggerModule } from '@verdiron/logger';
 import { HealthModule } from '../health/health.module';
 import { KinesisModule } from '../kinesis/kinesis.module';
+import { MessagingModule } from '../messaging/messaging.module';
 import { TracingShutdownService } from '../lifecycle/tracing-shutdown.service';
 import { PersistenceModule } from '../persistence/persistence.module';
 
@@ -11,6 +12,7 @@ import { PersistenceModule } from '../persistence/persistence.module';
     VerdironConfigModule,
     VerdironLoggerModule.forRoot(),
     PersistenceModule,
+    MessagingModule,
     HealthModule,
     KinesisModule,
   ],

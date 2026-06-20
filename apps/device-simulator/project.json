@@ -1,0 +1,38 @@
+{
+  "name": "device-simulator",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/device-simulator/src",
+  "projectType": "application",
+  "tags": ["scope:simulator", "type:app"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "dependsOn": ["^build"],
+      "options": {
+        "outputPath": "dist/apps/device-simulator",
+        "main": "apps/device-simulator/src/main.ts",
+        "tsConfig": "apps/device-simulator/tsconfig.app.json",
+        "assets": []
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "device-simulator:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "device-simulator:build:development"
+        },
+        "production": {
+          "buildTarget": "device-simulator:build:production"
+        }
+      }
+    }
+  }
+}

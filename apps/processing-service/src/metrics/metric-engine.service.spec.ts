@@ -1,11 +1,12 @@
 import { Test } from '@nestjs/testing';
 import type { TelemetryEvent } from '@verdiron/domain';
-import { AssetEntity, TelemetryEventRepository } from '@verdiron/persistence';
+import { AssetEntity, TelemetryEventRepository, TelemetryHotStore } from '@verdiron/persistence';
 import type { DataSource, Repository } from 'typeorm';
 import {
   DEFAULT_TELEMETRY_SAMPLE_MINUTES,
   MetricEngineService,
 } from './metric-engine.service';
+import { MetricRollupRefreshService } from './metric-rollup-refresh.service';
 import { VERDIRON_DATA_SOURCE } from '../persistence/persistence.module';
 
 const sampleEvent: TelemetryEvent = {
@@ -28,6 +29,8 @@ describe('MetricEngineService', () => {
   let service: MetricEngineService;
   let assetRepository: jest.Mocked<Pick<Repository<AssetEntity>, 'findOne'>>;
   let insertEvent: jest.Mock;
+  let putHotEvent: jest.Mock;
+  let scheduleRefreshForTelemetry: jest.Mock;
 
   beforeEach(async () => {
     assetRepository = {
@@ -38,7 +41,9 @@ describe('MetricEngineService', () => {
         site: { siteId: 'site-north-yard' },
       }),
     };
-    insertEvent = jest.fn().mockResolvedValue({ identifiers: [{ eventId: sampleEvent.eventId }] });
+    insertEvent = jest.fn().mockResolvedValue({ inserted: true });
+    putHotEvent = jest.fn().mockResolvedValue(undefined);
+    scheduleRefreshForTelemetry = jest.fn();
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -52,6 +57,14 @@ describe('MetricEngineService', () => {
         {
           provide: TelemetryEventRepository,
           useValue: { insertEvent },
+        },
+        {
+          provide: TelemetryHotStore,
+          useValue: { putEvent: putHotEvent },
+        },
+        {
+          provide: MetricRollupRefreshService,
+          useValue: { scheduleRefreshForTelemetry },
         },
       ],
     }).compile();
@@ -74,6 +87,12 @@ describe('MetricEngineService', () => {
     expect(result.metrics.fuelLiters).toBeCloseTo(8 / 60);
     expect(result.metrics.co2Kg).toBeCloseTo((8 / 60) * 2.68);
     expect(insertEvent).toHaveBeenCalledWith(sampleEvent);
+    expect(putHotEvent).toHaveBeenCalledWith(sampleEvent);
+    expect(scheduleRefreshForTelemetry).toHaveBeenCalledWith({
+      assetId: 'asset-exc-101',
+      siteId: 'site-north-yard',
+      ts: sampleEvent.ts,
+    });
   });
 
   it('throws when asset is unknown', async () => {
@@ -83,5 +102,16 @@ describe('MetricEngineService', () => {
       'Unknown asset: asset-exc-101',
     );
     expect(insertEvent).not.toHaveBeenCalled();
+    expect(putHotEvent).not.toHaveBeenCalled();
+    expect(scheduleRefreshForTelemetry).not.toHaveBeenCalled();
+  });
+
+  it('does not schedule rollup refresh when insert is a duplicate', async () => {
+    insertEvent.mockResolvedValue({ inserted: false });
+
+    const result = await service.processEvent(sampleEvent);
+
+    expect(result.persisted).toBe(false);
+    expect(scheduleRefreshForTelemetry).not.toHaveBeenCalled();
   });
 });

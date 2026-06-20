@@ -3,8 +3,14 @@ import type { TelemetryEvent } from '@verdiron/domain';
 import { createTypeOrmDataSourceOptions } from './typeorm-data-source';
 import { createAwsSdkClientConfig } from './aws-client-config';
 import {
+  buildHotTelemetryPartitionKey,
+  buildHotTelemetrySortKey,
+  computeHotTelemetryTtlEpochSeconds,
+  HOT_TELEMETRY_TTL_DAYS,
+} from './telemetry-hot-store';
+import { buildMetricRollupWindow } from './metric-rollup.repository';
+import {
   mapTelemetryEventToEntity,
-  TelemetryEventRepository,
 } from './telemetry-event.repository';
 import {
   buildTelemetryRawArchiveKey,
@@ -93,6 +99,30 @@ describe('persistence helpers', () => {
     expect(entity.assetId).toBe(sampleEvent.assetId);
     expect(entity.ts.toISOString()).toBe(sampleEvent.ts);
     expect(entity.speedKph).toBe(sampleEvent.speedKph);
+  });
+
+  it('builds DynamoDB hot-store keys and TTL for asset time-series access', () => {
+    expect(buildHotTelemetryPartitionKey('asset-exc-101')).toBe(
+      'ASSET#asset-exc-101',
+    );
+    expect(buildHotTelemetrySortKey('2026-06-15T12:00:00.000Z')).toBe(
+      'TS#2026-06-15T12:00:00.000Z',
+    );
+
+    const ttl = computeHotTelemetryTtlEpochSeconds('2026-06-15T12:00:00.000Z');
+    const expectedTtl = Math.floor(
+      (Date.parse('2026-06-15T12:00:00.000Z') +
+        HOT_TELEMETRY_TTL_DAYS * 86_400_000) /
+        1000,
+    );
+    expect(ttl).toBe(expectedTtl);
+  });
+
+  it('builds hourly metric rollup windows aligned to UTC buckets', () => {
+    expect(buildMetricRollupWindow('2026-06-15T14:30:00.000Z')).toEqual({
+      windowStart: '2026-06-15T14:00:00.000Z',
+      windowEnd: '2026-06-15T15:00:00.000Z',
+    });
   });
 
   it('writes JSONL objects to S3 with partitioned keys', async () => {

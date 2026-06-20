@@ -5,20 +5,44 @@
 
 ## Current status
 
-**Phase: VRD-032 metric engine + Postgres writes done.** Next: VRD-033 (DynamoDB hot raw writer).
+**Phase: product core complete through VRD-076.** All backend services, simulator, Python ETL, and web dashboard are implemented. **Remaining work is quality, containers, IaC, CI, and documentation** (VRD-080–084, VRD-090–091, VRD-100–102).
+
+| Area | Status |
+|------|--------|
+| Foundation + shared libs (VRD-001–008) | ✅ Done |
+| Local infra + migrations + OTel (VRD-010–016) | ✅ Done |
+| Ingestion / processing / API (VRD-020–045) | ✅ Done |
+| Device simulator (VRD-050–052) | ✅ Done |
+| Python ETL (VRD-060–062) | ✅ Done |
+| Web dashboard (VRD-070–076) | ✅ Done |
+| Quality & full docker stack (VRD-080–084) | ❌ Not started / partial |
+| Terraform + CI (VRD-090–091) | ❌ Not started |
+| README + docs polish (VRD-100–102) | ❌ Placeholder README only |
 
 ## Current work focus
 
-VRD-033 — Write hot raw telemetry to DynamoDB (`ASSET#<id>` / `TS#<iso>`).
+Next recommended tickets (in order):
+
+1. **VRD-084** — wire all apps + web into `docker-compose` (only device-simulator + python-etl Dockerfiles exist today).
+2. **VRD-090** — `infra/terraform` for Kinesis, S3, DynamoDB against LocalStack.
+3. **VRD-091** — GitHub Actions CI (lint, typecheck, test, build).
+4. **VRD-100** — README deliverable (depends on VRD-084 for one-command demo story).
+
+Optional parallel: **VRD-081–083** (integration suite hardening, contract test, Playwright e2e).
 
 ## Recent changes
 
-- VRD-032: `TelemetryEventEntity` + `TelemetryEventRepository` in `@verdiron/persistence`; `MetricEngineService` applies `computeAssetMetricsFromIntervals` and inserts normalized rows into partitioned `telemetry_events` (idempotent via `ON CONFLICT DO NOTHING`).
-- VRD-024: `ApiKeyGuard` on `POST /api/v1/telemetry` (`x-api-key` → 401); `/health/live` + `/health/ready` (legacy `/health` kept); `enableShutdownHooks` + `TracingShutdownService`; custom OTel spans `telemetry.accept` / `telemetry.produce` on intake.
-- VRD-023: S3 JSONL archive on intake (`raw/dt=YYYY-MM-DD/asset=<id>/<batch>.jsonl`); Kinesis + S3 in parallel; path-style S3 for LocalStack.
-- VRD-021: `POST /api/v1/telemetry` — single or batch intake via `@verdiron/domain` zod schemas + nestjs-zod `ZodValidationPipe`; 202 accepted / 400 validation errors.
-- VRD-020: `apps/ingestion-service` — Nest skeleton with config, logger, OTel bootstrap (tracing before imports), Swagger at `/docs`, `GET /health`, unit + Jaeger integration tests.
-- VRD-016: `SeedReferenceData1740000000003` + `reference-data.seed.ts` — 3 sites, 8 assets (excavators, loaders, trucks, generators); idempotent `ON CONFLICT DO NOTHING`; integration test verifies seed + down.
+- **VRD-076**: react-bits polish — local TS+Tailwind components (`CountUp`, `SpotlightCard`, `GradientText`, `ShinyText`, `Aurora`, `AnimatedList`); `PageHeading`; KPI spotlight + count-up; overview Aurora header; idling table stagger; live counter emphasis; `prefers-reduced-motion` respected (react-bits MCP unavailable — lightweight vendored implementations).
+- **VRD-075**: Demo Control Panel — sim start/stop, ETL run, live status poll, readiness indicators via `/health/ready`.
+- **VRD-074**: Idling & Waste Report — ranked offenders, fuel cost estimate, filters.
+- **VRD-073**: Asset Detail — KPIs, telemetry history chart, recent events table, filters, overview drilldown.
+- **VRD-072**: Fleet Overview — KPI row, Recharts trend chart, site/period/bucket filters.
+- **VRD-071**: API client + TanStack Query hooks + `QueryState` on all routes.
+- **VRD-070**: `web-dashboard` scaffold (Vite/React/Tailwind/React Router/TanStack Query).
+- **VRD-041–045**: API read endpoints (fleet, asset, idling report) + control routes + readiness/OTel hardening.
+- **VRD-060–062**: Python ETL scaffold, pandas rollups, `reporting_daily` upsert + RMQ worker.
+- **VRD-050–052**: Device simulator scaffold, generator, emit loop + RMQ control.
+- **VRD-020–035**: Full ingest → Kinesis → process → Postgres/DynamoDB/rollup pipeline with OTel.
 
 ## Locked decisions
 
@@ -47,50 +71,33 @@ VRD-033 — Write hot raw telemetry to DynamoDB (`ASSET#<id>` / `TS#<iso>`).
 - API: **REST** + **@nestjs/swagger** (OpenAPI) + **API key** header auth.
 - Tests: **Jest** + **supertest** + **testcontainers** (+ LocalStack); **Playwright** (1 e2e).
 - Frontend: React + Vite + TS, **Tailwind** + **react-bits**, **Recharts**, **TanStack Query**,
-  **React Router**. Chosen react-bits components: **CountUp** (KPI numbers), **SpotlightCard**
-  (KPI/cards), **GradientText**/**ShinyText** (brand headings), **Aurora** (subtle overview
-  header background), **AnimatedList** (idling offenders / live activity feed). Used sparingly.
+  **React Router**. Chosen react-bits components: **CountUp**, **SpotlightCard**, **GradientText**/
+  **ShinyText**, **Aurora**, **AnimatedList**. Used sparingly.
 - Observability: **OpenTelemetry** SDK in services → **OTel Collector** → **Jaeger** (traces),
   all via Docker; pino logs. Prometheus + Grafana = optional stretch.
 - Apps split: **NestJS** for ingestion/processing/api services only; **device-simulator is a
   light plain-TS Node app** (no Nest); ETL is Python.
-- Infra: **Docker** + docker-compose; **Terraform** (LocalStack-shaped, unused);
-  **GitHub Actions** CI (no deploy).
-- Demo control: services always running; UI drives simulator + ETL via control routes (RMQ/HTTP).
+- Infra: **Docker** + docker-compose (infra only today); **Terraform** + **GitHub Actions CI**
+  not yet added.
+- Demo control: UI drives simulator + ETL via control routes (RMQ/HTTP); services run locally.
 
 ## Next steps (execution order)
 
-1. ~~Shared libs: `config`, `logger`, `domain` (VRD-003–005)~~ ✅
-2. ~~Domain calculations + unit tests (VRD-006)~~ ✅
-3. ~~`messaging` + `persistence` libs (VRD-007–008)~~ ✅
-4. ~~LocalStack init scripts (VRD-011)~~ ✅
-5. ~~Migrations: core tables (VRD-012)~~ ✅
-6. ~~Partitioned telemetry migration (VRD-013)~~ ✅
-7. ~~Materialized view migration (VRD-014)~~ ✅
-8. ~~OpenTelemetry stack (VRD-015)~~ ✅
-9. ~~Reference data seed (VRD-016)~~ ✅
-10. ~~Ingestion service scaffold (VRD-020)~~ ✅
-11. ~~Telemetry intake endpoint (VRD-021)~~ ✅
-12. ~~Kinesis producer (VRD-022)~~ ✅
-13. ~~S3 raw archive (VRD-023)~~ ✅
-14. ~~Ingestion hardening (VRD-024)~~ ✅
-15. ~~Processing service scaffold (VRD-030)~~ ✅
-16. ~~Processing Kinesis consumer loop (VRD-031)~~ ✅
-17. ~~Processing metric engine + Postgres writes (VRD-032)~~ ✅
-18. `processing-service`: DynamoDB hot raw + rollup refresh + RabbitMQ events.
-16. `api-service`: REST + OpenAPI + control routes.
-17. `device-simulator`: realistic fleet telemetry.
-18. `python-etl`: S3 raw → daily rollups → Postgres reporting.
-19. `web-dashboard`: screens + control panel.
-20. Terraform (LocalStack-targeted) + GitHub Actions CI (no deploy).
-21. README deliverable + architecture diagram.
+1. ~~Foundation through frontend (VRD-001–076)~~ ✅
+2. **VRD-084** — Dockerfiles for all services + full compose stack incl. web UI + migrate-on-start.
+3. **VRD-090** — Terraform modules targeting LocalStack (Kinesis, S3, DynamoDB).
+4. **VRD-091** — GitHub Actions CI workflow.
+5. **VRD-100** + **VRD-101** — README deliverable + architecture diagram.
+6. **VRD-102** — Teaching docs (SQL + pandas explainers).
+7. Optional quality: **VRD-081** (full integration suite), **VRD-082** (contract test), **VRD-083** (Playwright e2e).
 
 ## Active considerations / open questions
 
 - Stack decisions are **finalized** (see "Final tech stack"). No open architecture questions.
-- All prior tiny-opens resolved: device-simulator = light Node app; OpenTelemetry = in scope
-  (Collector + Jaeger via Docker); react-bits components = chosen (see Final tech stack).
-- Work is broken into tickets in `memory-bank/tickets.md` — the execution backlog others follow.
+- `docker compose up` today starts **infra only** (Postgres, RabbitMQ, LocalStack, OTel, Jaeger) —
+  app services and web dashboard still run via Nx locally unless VRD-084 is done.
+- `README.md` is still a placeholder; full guide blocked on VRD-084 for honest one-command story.
+- Work is broken into tickets in `memory-bank/tickets.md` — the execution backlog.
 - Remaining optional stretch: Prometheus + Grafana metrics dashboards.
 
 ## Workflow reminders

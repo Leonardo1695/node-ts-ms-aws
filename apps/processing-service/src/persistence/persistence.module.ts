@@ -8,10 +8,13 @@ import { ConfigService } from '@nestjs/config';
 import type { Env } from '@verdiron/config';
 import {
   createDataSource,
+  createDynamoDbDocumentClient,
   createTypeOrmDataSourceOptions,
   destroyDataSource,
   persistenceEntities,
   TelemetryEventRepository,
+  TelemetryHotStore,
+  MetricRollupRepository,
 } from '@verdiron/persistence';
 import type { DataSource } from 'typeorm';
 
@@ -46,8 +49,40 @@ export const VERDIRON_DATA_SOURCE = Symbol('VERDIRON_DATA_SOURCE');
         new TelemetryEventRepository(dataSource),
       inject: [VERDIRON_DATA_SOURCE],
     },
+    {
+      provide: TelemetryHotStore,
+      useFactory: (config: ConfigService<Env, true>) =>
+        new TelemetryHotStore({
+          client: createDynamoDbDocumentClient({
+            AWS_REGION: config.getOrThrow('AWS_REGION', { infer: true }),
+            AWS_ENDPOINT_URL: config.get('AWS_ENDPOINT_URL', { infer: true }),
+            AWS_ACCESS_KEY_ID: config.getOrThrow('AWS_ACCESS_KEY_ID', {
+              infer: true,
+            }),
+            AWS_SECRET_ACCESS_KEY: config.getOrThrow('AWS_SECRET_ACCESS_KEY', {
+              infer: true,
+            }),
+            DYNAMODB_TABLE_NAME: config.getOrThrow('DYNAMODB_TABLE_NAME', {
+              infer: true,
+            }),
+          }),
+          tableName: config.getOrThrow('DYNAMODB_TABLE_NAME', { infer: true }),
+        }),
+      inject: [ConfigService],
+    },
+    {
+      provide: MetricRollupRepository,
+      useFactory: (dataSource: DataSource) =>
+        new MetricRollupRepository(dataSource),
+      inject: [VERDIRON_DATA_SOURCE],
+    },
   ],
-  exports: [VERDIRON_DATA_SOURCE, TelemetryEventRepository],
+  exports: [
+    VERDIRON_DATA_SOURCE,
+    TelemetryEventRepository,
+    TelemetryHotStore,
+    MetricRollupRepository,
+  ],
 })
 export class PersistenceModule implements OnModuleDestroy {
   constructor(

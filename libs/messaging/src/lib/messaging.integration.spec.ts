@@ -4,6 +4,7 @@ import amqp from 'amqplib';
 import { GenericContainer, Wait } from 'testcontainers';
 import type { TelemetryEvent } from '@verdiron/domain';
 import { createKinesisClient } from './kinesis-client';
+import { decodeKinesisTelemetryRecord } from './kinesis-telemetry-record';
 import { KinesisConsumer } from './kinesis-consumer';
 import { KinesisProducer } from './kinesis-producer';
 import { METRICS_UPDATED_QUEUE } from './rmq-options';
@@ -108,7 +109,8 @@ describeIntegration('messaging integration', () => {
       let payload = '';
       for (let attempt = 0; attempt < 10; attempt += 1) {
         const count = await consumer.pollOnce((records) => {
-          payload = Buffer.from(records[0]?.Data ?? []).toString('utf8');
+          const raw = Buffer.from(records[0]?.Data ?? []).toString('utf8');
+          payload = JSON.stringify(decodeKinesisTelemetryRecord(raw).event);
         });
 
         if (count > 0) {

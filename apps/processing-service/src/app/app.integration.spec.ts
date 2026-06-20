@@ -8,6 +8,11 @@ import {
   shutdownVerdironTracing,
   startVerdironTracing,
 } from '@verdiron/tracing';
+import { MetricsUpdatedPublisher } from '@verdiron/messaging';
+import { AppModule } from './app.module';
+import { KinesisConsumerLoopService } from '../kinesis/kinesis-consumer-loop.service';
+import { MetricRollupRefreshService } from '../metrics/metric-rollup-refresh.service';
+import { VERDIRON_DATA_SOURCE } from '../persistence/persistence.module';
 
 const integrationEnabled = process.env['RUN_INTEGRATION_TESTS'] === 'true';
 const describeIntegration = integrationEnabled ? describe : describe.skip;
@@ -59,11 +64,37 @@ describeIntegration('processing-service integration', () => {
       }),
     );
 
-    const { AppModule } = await import('./app.module.js');
-
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(VERDIRON_DATA_SOURCE)
+      .useValue({
+        isInitialized: true,
+        destroy: jest.fn().mockResolvedValue(undefined),
+        getRepository: jest.fn().mockReturnValue({
+          findOne: jest.fn().mockResolvedValue(null),
+        }),
+        query: jest.fn().mockResolvedValue(undefined),
+      })
+      .overrideProvider(MetricsUpdatedPublisher)
+      .useValue({
+        connect: jest.fn().mockResolvedValue(undefined),
+        close: jest.fn().mockResolvedValue(undefined),
+        publish: jest.fn(),
+      })
+      .overrideProvider(MetricRollupRefreshService)
+      .useValue({
+        scheduleRefreshForTelemetry: jest.fn(),
+        flush: jest.fn().mockResolvedValue(undefined),
+        onModuleDestroy: jest.fn().mockResolvedValue(undefined),
+      })
+      .overrideProvider(KinesisConsumerLoopService)
+      .useValue({
+        onApplicationBootstrap: jest.fn(),
+        onApplicationShutdown: jest.fn(),
+        pollOnce: jest.fn().mockResolvedValue(0),
+      })
+      .compile();
 
     app = moduleRef.createNestApplication();
     app.enableShutdownHooks();

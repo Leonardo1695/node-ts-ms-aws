@@ -47,8 +47,9 @@ real-time ingestion via Kinesis, storage in PostgreSQL + a NoSQL hot store, raw 
 
 - `libs/domain` — shared TypeScript types + zod schemas + **pure** sustainability calculations
   (unit-tested, framework-free).
-- `libs/messaging` — Kinesis producer/consumer helpers + RabbitMQ (NestJS RMQ transport) config.
-- `libs/persistence` — TypeORM data source + entities + migrations + DynamoDB (lib-dynamodb) client + **S3 object-store helpers** (`createS3Client`, `TelemetryRawArchive`) + **`TelemetryEventEntity` / repository** for partitioned telemetry inserts.
+- `libs/messaging` — Kinesis producer/consumer helpers + **Kinesis telemetry envelope** (event + W3C trace context) + RabbitMQ publishers/consumers (`MetricsUpdatedPublisher`, `SimControlPublisher`, `EtlRunPublisher`).
+- `libs/tracing` — OTel bootstrap + **`trace-propagation` helpers** (`injectActiveTraceCarrier`, `startLinkedSpan`).
+- `libs/persistence` — TypeORM data source + entities + migrations + DynamoDB (lib-dynamodb) client + **`TelemetryHotStore`** + **`MetricRollupRepository`** (matview refresh) + **`FleetMetricsRepository`** (matview reads + window-function trends) + **`AssetMetricsRepository`** (per-asset matview aggregates) + **`IdlingReportRepository`** (ranked idle waste report) + **S3 object-store helpers** + **`TelemetryEventEntity` / repository** for partitioned telemetry inserts.
 - `libs/config` — `@nestjs/config` module + zod-validated environment schema.
 - `libs/logger` — nestjs-pino logging with request/correlation ids.
 
@@ -98,7 +99,7 @@ real-time ingestion via Kinesis, storage in PostgreSQL + a NoSQL hot store, raw 
 ## Resilience & observability patterns
 
 - Structured logs (pino) with correlation ids across services.
-- Health/readiness endpoints per service.
+- Health/readiness endpoints per service (`/health/live`, `/health/ready` with dependency checks on api-service).
 - Graceful shutdown; consumer checkpointing.
 - **OpenTelemetry distributed tracing**: each NestJS service boots the OTel SDK with
   auto-instrumentation (HTTP, Nest, TypeORM/pg, amqplib, aws-sdk). Spans flow to an **OTel

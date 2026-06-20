@@ -15,9 +15,29 @@
   comments/docs because the author is learning the topic).
 - Requirement tags (Covers): `NODE-TS`, `AWS`, `MSA` (microservices), `SQL`, `NOSQL`, `MQ`,
   `API`, `DOCKER`, `IAC`, `ETL`, `IOT`, `OBS` (observability), `FE`, `TEST`, `DOCS`.
-- Status: `TODO` / `WIP` / `DONE` / `BLOCKED`. All currently `TODO`.
+- Status: `TODO` / `WIP` / `DONE` / `BLOCKED`. Per-ticket status lives in the summary below;
+  high-level tracking in `progress.md`.
 - Definition of Done (global): code typechecks, lint passes, relevant tests pass, runs under
   `docker-compose up`, and any teaching-flagged work has the required explanatory docs/comments.
+
+## Status summary (last synced: 2026-06-17)
+
+| Range | Epic | Status |
+|-------|------|--------|
+| VRD-001–008 | A — Foundation | **DONE** |
+| VRD-010–016 | B — Local infra | **DONE** |
+| VRD-020–024 | C — Ingestion | **DONE** |
+| VRD-030–035 | D — Processing | **DONE** |
+| VRD-040–045 | E — API | **DONE** |
+| VRD-050–052 | F — Simulator | **DONE** |
+| VRD-060–062 | G — Python ETL | **DONE** |
+| VRD-070–076 | H — Frontend | **DONE** |
+| VRD-080–084 | I — Quality & containers | **TODO** (domain tests exist; Docker/compose incomplete) |
+| VRD-090–091 | J — IaC & CI | **TODO** |
+| VRD-100–102 | K — Documentation | **TODO** (README still placeholder) |
+| VRD-103 | K — Memory Bank sync | **WIP** (updated with VRD-076 completion) |
+
+**Next up:** VRD-084 → VRD-090 → VRD-091 → VRD-100.
 
 ## Constraints reminder
 

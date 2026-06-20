@@ -39,6 +39,7 @@ describe('domain schemas', () => {
       siteId: asset.siteId,
       from: '2026-06-15T00:00:00.000Z',
       to: '2026-06-16T00:00:00.000Z',
+      bucket: 'hour',
       totals: {
         co2Kg: 100,
         fuelLiters: 40,

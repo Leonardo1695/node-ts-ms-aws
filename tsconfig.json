@@ -26,6 +26,15 @@
     },
     {
       "path": "./apps/processing-service"
+    },
+    {
+      "path": "./apps/api-service"
+    },
+    {
+      "path": "./apps/device-simulator"
+    },
+    {
+      "path": "./apps/web-dashboard"
     }
   ]
 }

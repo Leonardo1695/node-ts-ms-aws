@@ -9,3 +9,9 @@ export {
   type TracingBootstrapOptions,
   type TracingEnvConfig,
 } from './lib/tracing.options';
+export {
+  extractTraceContext,
+  injectActiveTraceCarrier,
+  startLinkedSpan,
+  type TraceCarrier,
+} from './lib/trace-propagation';

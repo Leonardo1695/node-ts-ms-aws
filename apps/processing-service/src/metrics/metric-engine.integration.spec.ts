@@ -9,11 +9,13 @@ import {
   persistenceMigrations,
   runMigrations,
   TelemetryEventRepository,
+  TelemetryHotStore,
 } from '@verdiron/persistence';
 import {
   DEFAULT_TELEMETRY_SAMPLE_MINUTES,
   MetricEngineService,
 } from './metric-engine.service';
+import { MetricRollupRefreshService } from './metric-rollup-refresh.service';
 
 const integrationEnabled = process.env['RUN_INTEGRATION_TESTS'] === 'true';
 const describeIntegration = integrationEnabled ? describe : describe.skip;
@@ -41,9 +43,18 @@ describeIntegration('metric engine integration', () => {
 
       await runMigrations(dataSource);
 
+      const rollupRefresh = new MetricRollupRefreshService(
+        { refresh: jest.fn() } as never,
+        { publish: jest.fn() } as never,
+      );
+
       const metricEngine = new MetricEngineService(
         dataSource,
         new TelemetryEventRepository(dataSource),
+        {
+          putEvent: jest.fn().mockResolvedValue(undefined),
+        } as unknown as TelemetryHotStore,
+        rollupRefresh,
       );
 
       const event: TelemetryEvent = {
