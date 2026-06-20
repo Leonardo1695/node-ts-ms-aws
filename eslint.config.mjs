@@ -23,6 +23,12 @@ export default [
     },
   },
   {
+    files: ['tests/integration/**/*.ts'],
+    rules: {
+      '@nx/enforce-module-boundaries': 'off',
+    },
+  },
+  {
     files: [
       '**/*.ts',
       '**/*.tsx',

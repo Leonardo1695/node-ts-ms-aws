@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "../..",
+    "outDir": "../../dist/out-tsc/tests/integration",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "emitDeclarationOnly": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "ignoreDeprecations": "6.0",
+    "types": ["jest", "node"]
+  },
+  "include": ["tests/integration/**/*.ts", "jest.config.cjs"]
+}

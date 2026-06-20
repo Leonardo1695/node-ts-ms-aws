@@ -14,6 +14,7 @@
     "@nx/node": "^22.7.5",
     "@nx/react": "^23.0.0",
     "@nx/vite": "^23.0.0",
+    "@playwright/test": "^1.61.0",
     "@swc-node/register": "~1.11.1",
     "@swc/core": "~1.15.5",
     "@swc/helpers": "~0.5.18",
@@ -36,6 +37,7 @@
     "eslint-config-prettier": "^10.1.8",
     "jest": "^29.7.0",
     "jest-environment-node": "^29.7.0",
+    "jest-openapi": "^0.14.2",
     "jest-util": "^29.7.0",
     "jsdom": "^29.1.1",
     "jsonc-eslint-parser": "^2.1.0",
@@ -52,7 +54,8 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.61.1",
     "vite": "^8.0.16",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.9",
+    "zod-to-json-schema": "^3.25.2"
   },
   "nx": {},
   "dependencies": {

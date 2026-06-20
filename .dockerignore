@@ -1,0 +1,16 @@
+node_modules
+dist
+.nx
+coverage
+.git
+.env
+.env.*
+!.env.example
+**/*.spec.ts
+**/*.test.ts
+**/*.integration.spec.ts
+memory-bank
+.cursor
+mcps
+agent-transcripts
+**/.DS_Store

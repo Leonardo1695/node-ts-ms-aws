@@ -82,13 +82,13 @@ describe('messaging helpers', () => {
 
     expect(send).toHaveBeenCalledTimes(2);
     const firstCommand = send.mock.calls[0]?.[0] as {
-      input: { Records: Array<{ PartitionKey: string }> };
+      input: { Records: Array<{ PartitionKey: string; Data: Uint8Array }> };
     };
     expect(firstCommand.input.Records[0]?.PartitionKey).toBe('asset-1');
 
-    const body = Buffer.from(
-      (firstCommand.input.Records[0] as { Data: Uint8Array }).Data,
-    ).toString('utf8');
+    const body = Buffer.from(firstCommand.input.Records[0].Data).toString(
+      'utf8',
+    );
     const decoded = decodeKinesisTelemetryRecord(body);
     expect(decoded.event).toMatchObject({ assetId: 'asset-1' });
   });

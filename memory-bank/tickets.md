@@ -32,12 +32,11 @@
 | VRD-050–052 | F — Simulator | **DONE** |
 | VRD-060–062 | G — Python ETL | **DONE** |
 | VRD-070–076 | H — Frontend | **DONE** |
-| VRD-080–084 | I — Quality & containers | **TODO** (domain tests exist; Docker/compose incomplete) |
-| VRD-090–091 | J — IaC & CI | **TODO** |
-| VRD-100–102 | K — Documentation | **TODO** (README still placeholder) |
-| VRD-103 | K — Memory Bank sync | **WIP** (updated with VRD-076 completion) |
+| VRD-080–084 | I — Quality & containers | **DONE** |
+| VRD-090–091 | J — IaC & CI | **DONE** |
+| VRD-100–101 | K — Documentation | **DONE** |
 
-**Next up:** VRD-084 → VRD-090 → VRD-091 → VRD-100.
+**Next up:** project wrap-up / demo polish as needed.
 
 ## Constraints reminder
 
@@ -506,20 +505,7 @@ lands early in B so every service is traced from the start.
 
 ### VRD-101 — Architecture diagram asset
 - **Depends on**: —
-- **Tasks**: produce a clean architecture diagram (image) for README + Memory Bank.
-- **Covers**: DOCS · **Teaching**: no
-
-### VRD-102 — Teaching docs: advanced SQL + pandas
-- **Goal**: Learning material for the unfamiliar topics.
-- **Depends on**: VRD-013, VRD-014, VRD-041, VRD-043, VRD-061
-- **Tasks**: short explainers (in README or a docs note) on partitioning, window functions,
-  materialized views, and the pandas ETL — what/why, with examples from this codebase.
-- **Covers**: DOCS, SQL, ETL · **Teaching**: **yes**
-
-### VRD-103 — Keep Memory Bank in sync
-- **Goal**: Docs reflect reality.
-- **Depends on**: ongoing
-- **Tasks**: update `activeContext.md` + `progress.md` (+ others as needed) as tickets complete.
+- **Tasks**: produce a clean architecture diagram for README + Memory Bank (Mermaid in `docs/architecture/diagram.md`).
 - **Covers**: DOCS · **Teaching**: no
 
 ---
@@ -531,4 +517,4 @@ lands early in B so every service is traced from the start.
 - **M3 End-to-end pipeline**: VRD-020..035, VRD-050..052
 - **M4 API + Frontend on live data**: VRD-040..045, VRD-070..076
 - **M5 ETL + IaC + CI**: VRD-060..062, VRD-090..091
-- **M6 Quality + docs + demo polish**: VRD-080..084, VRD-100..103
+- **M6 Quality + docs + demo polish**: VRD-080..084, VRD-100..101

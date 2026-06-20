@@ -1,0 +1,6 @@
+aws_region            = "us-east-1"
+localstack_endpoint   = "http://localhost:4566"
+kinesis_stream_name   = "telemetry"
+kinesis_shard_count   = 1
+s3_bucket_name        = "verdiron-raw"
+dynamodb_table_name   = "telemetry-hot"

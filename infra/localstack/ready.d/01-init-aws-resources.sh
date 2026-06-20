@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Creates the same AWS resources as infra/terraform/localstack (VRD-090).
+# Use either this bootstrap script (docker compose) or Terraform — not both on the same names
+# without importing state first (see infra/terraform/localstack/import-existing.ps1).
 set -euo pipefail
 
 REGION="${AWS_DEFAULT_REGION:-us-east-1}"

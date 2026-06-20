@@ -1,0 +1,16 @@
+{
+  "name": "integration-tests",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "tests/integration",
+  "projectType": "application",
+  "tags": ["scope:quality", "type:test"],
+  "targets": {
+    "integration-test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "tests/integration/jest.config.cjs",
+        "runInBand": true
+      }
+    }
+  }
+}

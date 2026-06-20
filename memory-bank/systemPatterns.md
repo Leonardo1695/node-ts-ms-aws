@@ -4,6 +4,8 @@
 
 ## High-level architecture
 
+Canonical diagram: [`docs/architecture/diagram.md`](../docs/architecture/diagram.md) (Mermaid)
+
 Event-driven microservices. IoT data flows ingest → stream → process → store → serve.
 Mirrors the real target stack: Node.js microservices communicating via RabbitMQ + HTTP,
 real-time ingestion via Kinesis, storage in PostgreSQL + a NoSQL hot store, raw archive in S3.

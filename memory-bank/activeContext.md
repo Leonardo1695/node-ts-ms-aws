@@ -5,7 +5,7 @@
 
 ## Current status
 
-**Phase: product core complete through VRD-076.** All backend services, simulator, Python ETL, and web dashboard are implemented. **Remaining work is quality, containers, IaC, CI, and documentation** (VRD-080–084, VRD-090–091, VRD-100–102).
+**Phase: planned backlog complete through VRD-101; quality tickets VRD-081–083 done.** Full stack, Docker, Terraform, CI, README, architecture diagram, pipeline integration test, OpenAPI contract tests, and Playwright e2e are in place.
 
 | Area | Status |
 |------|--------|
@@ -15,24 +15,26 @@
 | Device simulator (VRD-050–052) | ✅ Done |
 | Python ETL (VRD-060–062) | ✅ Done |
 | Web dashboard (VRD-070–076) | ✅ Done |
-| Quality & full docker stack (VRD-080–084) | ❌ Not started / partial |
-| Terraform + CI (VRD-090–091) | ❌ Not started |
-| README + docs polish (VRD-100–102) | ❌ Placeholder README only |
+| Quality & full docker stack (VRD-080–084) | ✅ Done |
+| Terraform + CI (VRD-090–091) | ✅ Done |
+| README + docs polish (VRD-100–101) | ✅ Done |
 
 ## Current work focus
 
 Next recommended tickets (in order):
 
-1. **VRD-084** — wire all apps + web into `docker-compose` (only device-simulator + python-etl Dockerfiles exist today).
-2. **VRD-090** — `infra/terraform` for Kinesis, S3, DynamoDB against LocalStack.
-3. **VRD-091** — GitHub Actions CI (lint, typecheck, test, build).
-4. **VRD-100** — README deliverable (depends on VRD-084 for one-command demo story).
+1. ~~**VRD-084** — wire all apps + web into `docker-compose`~~ ✅
+2. ~~**VRD-090** — `infra/terraform` for Kinesis, S3, DynamoDB against LocalStack~~ ✅
+3. ~~**VRD-091** — GitHub Actions CI (lint, typecheck, test, build)~~ ✅
+4. ~~**VRD-100** — README deliverable~~ ✅
+5. ~~**VRD-101** — architecture diagram asset~~ ✅
 
-Optional parallel: **VRD-081–083** (integration suite hardening, contract test, Playwright e2e).
+Quality (VRD-081–083): ✅ pipeline integration test, OpenAPI contract tests, Playwright e2e.
 
 ## Recent changes
 
-- **VRD-076**: react-bits polish — local TS+Tailwind components (`CountUp`, `SpotlightCard`, `GradientText`, `ShinyText`, `Aurora`, `AnimatedList`); `PageHeading`; KPI spotlight + count-up; overview Aurora header; idling table stagger; live counter emphasis; `prefers-reduced-motion` respected (react-bits MCP unavailable — lightweight vendored implementations).
+- **VRD-081–083**: Pipeline integration test (`tests/integration/`), OpenAPI contract tests (`jest-openapi`), Playwright demo e2e; CI jobs for integration + e2e.
+- **VRD-101**: Architecture diagram — Mermaid in `docs/architecture/diagram.md`.
 - **VRD-075**: Demo Control Panel — sim start/stop, ETL run, live status poll, readiness indicators via `/health/ready`.
 - **VRD-074**: Idling & Waste Report — ranked offenders, fuel cost estimate, filters.
 - **VRD-073**: Asset Detail — KPIs, telemetry history chart, recent events table, filters, overview drilldown.
@@ -77,26 +79,24 @@ Optional parallel: **VRD-081–083** (integration suite hardening, contract test
   all via Docker; pino logs. Prometheus + Grafana = optional stretch.
 - Apps split: **NestJS** for ingestion/processing/api services only; **device-simulator is a
   light plain-TS Node app** (no Nest); ETL is Python.
-- Infra: **Docker** + docker-compose (infra only today); **Terraform** + **GitHub Actions CI**
-  not yet added.
+- Infra: **Docker** + `docker compose up` runs full stack; **Terraform** targets LocalStack; **GitHub Actions CI** on push/PR.
 - Demo control: UI drives simulator + ETL via control routes (RMQ/HTTP); services run locally.
 
 ## Next steps (execution order)
 
 1. ~~Foundation through frontend (VRD-001–076)~~ ✅
-2. **VRD-084** — Dockerfiles for all services + full compose stack incl. web UI + migrate-on-start.
-3. **VRD-090** — Terraform modules targeting LocalStack (Kinesis, S3, DynamoDB).
-4. **VRD-091** — GitHub Actions CI workflow.
-5. **VRD-100** + **VRD-101** — README deliverable + architecture diagram.
-6. **VRD-102** — Teaching docs (SQL + pandas explainers).
-7. Optional quality: **VRD-081** (full integration suite), **VRD-082** (contract test), **VRD-083** (Playwright e2e).
+2. ~~**VRD-084** — Dockerfiles for all services + full compose stack incl. web UI + migrate-on-start~~ ✅
+3. ~~**VRD-090** — Terraform modules targeting LocalStack (Kinesis, S3, DynamoDB)~~ ✅
+4. ~~**VRD-091** — GitHub Actions CI workflow~~ ✅
+5. ~~**VRD-100** — README deliverable~~ ✅
+6. ~~**VRD-101** — architecture diagram asset~~ ✅
+7. ~~**VRD-081–083** — quality hardening~~ ✅
 
 ## Active considerations / open questions
 
 - Stack decisions are **finalized** (see "Final tech stack"). No open architecture questions.
-- `docker compose up` today starts **infra only** (Postgres, RabbitMQ, LocalStack, OTel, Jaeger) —
-  app services and web dashboard still run via Nx locally unless VRD-084 is done.
-- `README.md` is still a placeholder; full guide blocked on VRD-084 for honest one-command story.
+- `docker compose up -d --build` starts **full stack** incl. web UI at `:4200`, API at `:3003`.
+- `README.md` is the interviewer-facing run guide; deep design stays in `memory-bank/`.
 - Work is broken into tickets in `memory-bank/tickets.md` — the execution backlog.
 - Remaining optional stretch: Prometheus + Grafana metrics dashboards.
 

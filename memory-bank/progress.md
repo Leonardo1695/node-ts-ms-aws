@@ -4,7 +4,7 @@
 
 ## Current status
 
-**Core product built (VRD-001 through VRD-076).** End-to-end code exists for ingest → process → API → dashboard, plus simulator and Python ETL. **Not yet done:** one-command full stack in Docker, Terraform, CI, README deliverable, and several quality tickets.
+**Core product built (VRD-001 through VRD-101 + quality VRD-081–083).** `docker compose up -d --build` runs the full stack including web UI.
 
 > Detailed tickets live in `memory-bank/tickets.md`. This file tracks milestone-level status.
 
@@ -20,9 +20,9 @@
 | F — Simulator | VRD-050–052 | ✅ Done |
 | G — Python ETL | VRD-060–062 | ✅ Done |
 | H — Frontend | VRD-070–076 | ✅ Done |
-| I — Quality & containers | VRD-080–084 | ❌ Mostly open (see below) |
-| J — IaC & CI | VRD-090–091 | ❌ Not started |
-| K — Documentation | VRD-100–103 | ❌ Open (VRD-103 in progress this session) |
+| I — Quality & containers | VRD-080–084 | ✅ Done |
+| J — IaC & CI | VRD-090–091 | ✅ Done |
+| K — Documentation | VRD-100–101 | ✅ Done |
 
 ## What works
 
@@ -32,7 +32,7 @@
 - Domain sustainability calculations + unit tests (VRD-006).
 
 ### Local infra (docker-compose)
-- `docker compose up -d` — Postgres, RabbitMQ, LocalStack, OTel Collector, Jaeger (VRD-010, VRD-015).
+- `docker compose up -d --build` — full stack: Postgres, RabbitMQ, LocalStack, OTel, Jaeger, **db-migrate**, ingestion, processing, api, simulator, python-etl, **web-dashboard** (VRD-010–016, VRD-084).
 - LocalStack ready.d init — Kinesis `telemetry`, S3 `verdiron-raw`, DynamoDB `telemetry-hot` (VRD-011).
 - Migrations: core tables, partitioned `telemetry_events`, `metric_rollups` matview, reference seed (VRD-012–016).
 
@@ -63,30 +63,27 @@ Legend: [ ] not started · [~] partial · [x] done
 
 ### Quality & tooling (EPIC I — VRD-080–084)
 - [x] Domain unit tests (VRD-006 / VRD-080 largely satisfied)
-- [~] Integration tests — specs exist per service; full ingest→process→read pipeline suite not consolidated (VRD-081)
-- [ ] API contract test vs OpenAPI (VRD-082)
-- [ ] Playwright e2e: simulator → dashboard (VRD-083)
-- [~] Dockerfiles — **only** `device-simulator` + `python-etl` today; missing ingestion, processing, api, web (VRD-084)
-- [ ] Full `docker-compose` app wiring + migrate-on-start + UI (VRD-084)
+- [x] Consolidated ingest→process→read pipeline integration test (VRD-081 ✅)
+- [x] OpenAPI contract tests with `jest-openapi` (VRD-082 ✅)
+- [x] Playwright e2e: control panel → fleet overview charts (VRD-083 ✅)
+- [x] Dockerfiles + full `docker-compose` app wiring (VRD-084 ✅)
 
 ### IaC & CI (EPIC J — VRD-090–091)
-- [ ] Terraform modules for LocalStack (`infra/terraform` does not exist yet) (VRD-090)
-- [ ] GitHub Actions CI — no `.github/workflows` yet (VRD-091)
+- [x] Terraform modules for LocalStack (`infra/terraform`) (VRD-090 ✅)
+- [x] GitHub Actions CI — `.github/workflows/ci.yml` (VRD-091 ✅)
 
-### Documentation (EPIC K — VRD-100–103)
-- [ ] README deliverable — story, skills mapping, run guide, demo tour (VRD-100; `README.md` is placeholder)
-- [ ] Architecture diagram asset (VRD-101)
-- [ ] Teaching docs: SQL partitioning, window funcs, matview, pandas ETL (VRD-102)
-- [~] Memory Bank sync (VRD-103 — updated this session)
+### Documentation (EPIC K — VRD-100–101)
+- [x] README deliverable — story, skills mapping, run guide, demo tour (VRD-100 ✅)
+- [x] Architecture diagram — Mermaid (`docs/architecture/diagram.md`) (VRD-101 ✅)
 
 ## Known gaps (honest)
 
 | Gap | Impact |
 |-----|--------|
-| No app services in compose | Demo requires multiple `nx serve` terminals + manual migration |
-| No CI | No automated lint/test/build on push/PR |
-| No Terraform | LocalStack resources only via shell init script |
-| README placeholder | New reader cannot run full demo from README alone |
+| ~~No app services in compose~~ | ~~Demo requires multiple `nx serve` terminals~~ — **fixed in VRD-084** |
+| No CI | ~~No `.github/workflows`~~ — **added in VRD-091** |
+| No Terraform | ~~`infra/terraform` missing~~ — **added in VRD-090**; use `import-existing.ps1` if compose init already ran |
+| README placeholder | ~~Fixed in VRD-100~~ — full quick start + demo tour in `README.md` |
 | react-bits MCP down | VRD-076 used vendored lightweight components instead of upstream copy |
 
 ## Known issues / risks
@@ -102,15 +99,16 @@ Legend: [ ] not started · [~] partial · [x] done
 |-----------|-------|--------|
 | **M1** Foundation + Memory Bank | VRD-001–008 | ✅ Done |
 | **M2** Domain + local infra runnable | VRD-010–016 | ✅ Done |
-| **M3** End-to-end pipeline | VRD-020–035, VRD-050–052 | ✅ Done (code); needs VRD-084 for one-command run |
+| **M3** End-to-end pipeline | VRD-020–035, VRD-050–052 | ✅ Done (incl. `docker compose up`) |
 | **M4** Frontend on live API data | VRD-040–045, VRD-070–076 | ✅ Done |
-| **M5** ETL + Terraform + CI | VRD-060–062, VRD-090–091 | [~] ETL done; Terraform + CI missing |
-| **M6** Quality + docs + demo polish | VRD-080–084, VRD-100–102 | ❌ Not started |
+| **M5** ETL + Terraform + CI | VRD-060–062, VRD-090–091 | ✅ Done |
+| **M6** Quality + docs + demo polish | VRD-080–084, VRD-100–101 | ✅ Done |
 
 ## Suggested next ACT order
 
-1. VRD-084 — full Docker stack (unblocks honest README)
-2. VRD-090 — Terraform
-3. VRD-091 — CI
-4. VRD-100 + VRD-101 — README + diagram
-5. VRD-081–083 — quality hardening (as time allows)
+1. ~~VRD-084 — full Docker stack~~ ✅
+2. ~~VRD-090 — Terraform~~ ✅
+3. ~~VRD-091 — CI~~ ✅
+4. ~~VRD-100 — README~~ ✅
+5. ~~VRD-101 — architecture diagram~~ ✅
+6. ~~VRD-081–083 — quality hardening~~ ✅

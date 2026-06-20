@@ -1,5 +1,23 @@
 name: verdiron
 
+x-verdiron-app-env: &verdiron-app-env
+  NODE_ENV: production
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: 5432
+  POSTGRES_USER: ${POSTGRES_USER:-verdiron}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-verdiron}
+  POSTGRES_DB: ${POSTGRES_DB:-verdiron}
+  RABBITMQ_URL: amqp://${RABBITMQ_USER:-verdiron}:${RABBITMQ_PASSWORD:-verdiron}@rabbitmq:5672
+  AWS_REGION: ${AWS_REGION:-us-east-1}
+  AWS_ENDPOINT_URL: http://localstack:4566
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-test}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-test}
+  KINESIS_STREAM_NAME: ${KINESIS_STREAM_NAME:-telemetry}
+  S3_BUCKET_NAME: ${S3_BUCKET_NAME:-verdiron-raw}
+  DYNAMODB_TABLE_NAME: ${DYNAMODB_TABLE_NAME:-telemetry-hot}
+  API_KEY: ${API_KEY:-dev-api-key-change-me}
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -118,6 +136,223 @@ services:
     depends_on:
       jaeger:
         condition: service_healthy
+    networks:
+      - verdiron
+
+  db-migrate:
+    build:
+      context: .
+      dockerfile: infra/docker/db-migrate.Dockerfile
+    container_name: verdiron-db-migrate
+    restart: 'no'
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-verdiron}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-verdiron}
+      POSTGRES_DB: ${POSTGRES_DB:-verdiron}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - verdiron
+
+  ingestion-service:
+    build:
+      context: .
+      dockerfile: apps/ingestion-service/Dockerfile
+    container_name: verdiron-ingestion
+    restart: unless-stopped
+    environment:
+      <<: *verdiron-app-env
+      OTEL_SERVICE_NAME: ingestion-service
+      INGESTION_PORT: 3001
+    ports:
+      - '${INGESTION_PORT:-3001}:3001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      db-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    networks:
+      - verdiron
+
+  processing-service:
+    build:
+      context: .
+      dockerfile: apps/processing-service/Dockerfile
+    container_name: verdiron-processing
+    restart: unless-stopped
+    environment:
+      <<: *verdiron-app-env
+      OTEL_SERVICE_NAME: processing-service
+      PROCESSING_PORT: 3002
+    ports:
+      - '${PROCESSING_PORT:-3002}:3002'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      db-migrate:
+        condition: service_completed_successfully
+      ingestion-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3002/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    networks:
+      - verdiron
+
+  api-service:
+    build:
+      context: .
+      dockerfile: apps/api-service/Dockerfile
+    container_name: verdiron-api
+    restart: unless-stopped
+    environment:
+      <<: *verdiron-app-env
+      OTEL_SERVICE_NAME: api-service
+      API_PORT: 3003
+    ports:
+      - '${API_PORT:-3003}:3003'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      db-migrate:
+        condition: service_completed_successfully
+      processing-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3003/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 45s
+    networks:
+      - verdiron
+
+  device-simulator:
+    build:
+      context: .
+      dockerfile: apps/device-simulator/Dockerfile
+    container_name: verdiron-simulator
+    restart: unless-stopped
+    environment:
+      SIMULATOR_PORT: 3010
+      INGESTION_BASE_URL: http://ingestion-service:3001
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-verdiron}:${RABBITMQ_PASSWORD:-verdiron}@rabbitmq:5672
+      API_KEY: ${API_KEY:-dev-api-key-change-me}
+      SIM_SEED: ${SIM_SEED:-42}
+    ports:
+      - '${SIMULATOR_PORT:-3010}:3010'
+    depends_on:
+      ingestion-service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3010/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - verdiron
+
+  python-etl:
+    build:
+      context: ./jobs/python-etl
+      dockerfile: Dockerfile
+    container_name: verdiron-python-etl
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-verdiron}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-verdiron}
+      POSTGRES_DB: ${POSTGRES_DB:-verdiron}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-test}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-test}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-verdiron-raw}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-verdiron}:${RABBITMQ_PASSWORD:-verdiron}@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+    networks:
+      - verdiron
+
+  web-dashboard:
+    build:
+      context: .
+      dockerfile: apps/web-dashboard/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:${API_PORT:-3003}
+        VITE_API_KEY: ${API_KEY:-dev-api-key-change-me}
+    container_name: verdiron-web
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT:-4200}:80'
+    depends_on:
+      api-service:
+        condition: service_healthy
     healthcheck:
       test:
         [
@@ -125,7 +360,7 @@ services:
           'wget',
           '--spider',
           '-q',
-          'http://localhost:13133/',
+          'http://localhost:80/',
         ]
       interval: 10s
       timeout: 5s

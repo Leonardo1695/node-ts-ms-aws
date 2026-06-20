@@ -11,10 +11,12 @@ export type PostgresEnvConfig = Pick<
   'POSTGRES_HOST' | 'POSTGRES_PORT' | 'POSTGRES_USER' | 'POSTGRES_PASSWORD' | 'POSTGRES_DB'
 >;
 
+type TypeOrmClass = abstract new (...args: never) => object;
+
 export interface TypeOrmConfigInput {
   env: PostgresEnvConfig;
-  entities: MixedList<string | Function | EntitySchema>;
-  migrations?: MixedList<string | Function>;
+  entities: MixedList<string | TypeOrmClass | EntitySchema>;
+  migrations?: MixedList<string | TypeOrmClass>;
   migrationsRun?: boolean;
 }
 

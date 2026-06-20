@@ -4,9 +4,10 @@ WORKDIR /workspace
 
 COPY package.json package-lock.json nx.json tsconfig.base.json tsconfig.json ./
 COPY apps/device-simulator ./apps/device-simulator
-COPY libs/domain ./libs/domain
+COPY libs ./libs
+COPY infra/docker/link-verdiron-libs.sh ./infra/docker/link-verdiron-libs.sh
 
-RUN npm ci
+RUN npm install --no-audit --no-fund
 RUN npx nx run device-simulator:build
 
 FROM node:22-alpine AS runtime
@@ -15,12 +16,15 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=build /workspace/dist/apps/device-simulator ./simulator
-COPY --from=build /workspace/dist/libs/domain ./domain-package
-COPY --from=build /workspace/node_modules/tslib ./node_modules/tslib
+COPY package.json package-lock.json ./
+RUN npm install --no-audit --no-fund --omit=dev
 
-RUN mkdir -p node_modules/@verdiron/domain \
-  && cp -r domain-package/. node_modules/@verdiron/domain/
+COPY --from=build /workspace/dist/apps/device-simulator ./simulator
+COPY --from=build /workspace/dist/libs ./dist-libs
+COPY --from=build /workspace/infra/docker/link-verdiron-libs.sh ./link-verdiron-libs.sh
+
+RUN chmod +x ./link-verdiron-libs.sh \
+  && ./link-verdiron-libs.sh ./dist-libs ./node_modules
 
 WORKDIR /app/simulator
 
